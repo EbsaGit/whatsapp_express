@@ -1,20 +1,52 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const connectDB = require('./src/config/database');
+const Message = require('./src/models/Message');
 const app = express();
 const port = process.env.PORT || 3000;
+
+// Conectar a MongoDB
+connectDB();
 
 // Middleware para parsear JSON
 app.use(bodyParser.json());
 
 // Endpoint para recibir y responder a los eventos de webhook
-app.post('/webhook', (req, res) => {
+app.post('/webhook', async (req, res) => {
     const body = req.body;
 
-    // Verificar que el evento tiene el campo "challenge"
-    if (body.challenge) {
-        res.status(200).send(body.challenge);
+    // Verifica y maneja el evento del webhook de WhatsApp
+    if (body.object) {
+        console.log('Webhook received:', JSON.stringify(body, null, 2));
+
+        // Procesa los mensajes aquí
+        if (body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages) {
+            const messages = body.entry[0].changes[0].value.messages;
+            try {
+                for (const message of messages) {
+                    const newMessage = new Message({
+                        recipient_phone: message.to,  // O el campo correcto según tu estructura
+                        message_id: message.id,
+                        display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,  // O el campo correcto
+                        display_phone_number_id: body.entry[0].changes[0].value.metadata.display_phone_number_id,  // O el campo correcto
+                        conversation_id: message.conversation_id,  // O el campo correcto
+                        message_text: message.text.body,  // O el campo correcto
+                        type: message.type,
+                        created_time: new Date(message.timestamp * 1000)  // Si el timestamp está en segundos
+                    });
+                    await newMessage.save();
+                }
+                res.status(200).send('EVENT_RECEIVED');
+            } catch (error) {
+                console.error('Error saving message:', error);
+                res.status(500).send('Error saving message');
+            }
+        } else {
+            res.status(200).send('EVENT_RECEIVED');
+        }
     } else {
-        res.status(400).send('No challenge provided');
+        // Si no se recibe un objeto esperado, responde con un error
+        res.sendStatus(404);
     }
 });
 
