@@ -1,16 +1,17 @@
 const mongoose = require('mongoose');
 
-const dbURI = 'mongodb://sacst:HOLA94mundo@159.203.75.60:27017/mywhatsappdb';
-
+const dbURI = 'mongodb://sacst:HOLA94mundo@159.203.75.60:27017/';
+             
 const connectDB = async () => {
   try {
     await mongoose.connect(dbURI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      
     });
     console.log('MongoDB connected');
   } catch (err) {
-    console.error(err.message);
+    console.error('Error connecting to MongoDB:', err.message);
     process.exit(1);
   }
 };
