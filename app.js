@@ -56,8 +56,8 @@ app.post('/webhook', async (req, res) => {
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
     // Verificar el token
-    const VERIFY_TOKEN = 'holamundo94';
-    console.log(req);
+    const VERIFY_TOKEN = "holamundo94";
+    console.log(req.body);
 
     // Parsear los parámetros de la solicitud
     const mode = req.query['hub.mode'];
