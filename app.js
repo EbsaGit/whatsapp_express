@@ -68,7 +68,7 @@ app.get('/webhook', (req, res) => {
         // Responder con el challenge token
         res.status(200).send(challenge);
         console.log(req.body);
-        console.log(res);
+        //console.log(res);
     } else {
         // Responder con un error si la verificación falla
         res.sendStatus(403);
