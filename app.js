@@ -24,17 +24,20 @@ app.post('/webhook', async (req, res) => {
             const messages = body.entry[0].changes[0].value.messages;
             try {
                 for (const message of messages) {
-                    const newMessage = new Message({
-                        recipient_phone: message.to,  // O el campo correcto según tu estructura
-                        message_id: message.id,
-                        display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,  // O el campo correcto
-                        display_phone_number_id: body.entry[0].changes[0].value.metadata.display_phone_number_id,  // O el campo correcto
-                        conversation_id: message.conversation_id,  // O el campo correcto
-                        message_text: message.text.body,  // O el campo correcto
-                        type: message.type,
-                        created_time: new Date(message.timestamp * 1000)  // Si el timestamp está en segundos
-                    });
-                    await newMessage.save();
+                    // Filtra los mensajes que tienen el campo "from"
+                    if (message.from) {
+                        const newMessage = new Message({
+                            recipient_phone: message.to || 'unknown',  // Ajustar según tu estructura
+                            message_id: message.id,
+                            display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
+                            display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
+                            conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
+                            message_text: message.text.body,
+                            type: message.type,
+                            created_time: new Date(message.timestamp * 1000)  // Si el timestamp está en segundos
+                        });
+                        await newMessage.save();
+                    }
                 }
                 res.status(200).send('EVENT_RECEIVED');
             } catch (error) {
