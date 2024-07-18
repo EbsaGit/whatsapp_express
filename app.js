@@ -57,6 +57,7 @@ app.post('/webhook', async (req, res) => {
 app.get('/webhook', (req, res) => {
     // Verificar el token
     const VERIFY_TOKEN = 'holamundo94';
+    console.log(req.body);
 
     // Parsear los parámetros de la solicitud
     const mode = req.query['hub.mode'];
@@ -67,7 +68,6 @@ app.get('/webhook', (req, res) => {
     if (mode && token === VERIFY_TOKEN) {
         // Responder con el challenge token
         res.status(200).send(challenge);
-        console.log(req.body);
         //console.log(res);
     } else {
         // Responder con un error si la verificación falla
