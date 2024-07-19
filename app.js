@@ -5,6 +5,8 @@ const Message = require('./src/models/Message');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const VERIFY_TOKEN = "holamundo94";
+
 // Conectar a MongoDB
 connectDB();
 
@@ -56,7 +58,6 @@ app.post('/webhook', async (req, res) => {
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
     // Verificar el token
-    const VERIFY_TOKEN = "holamundo94";
     console.log(req.body);
 
     // Parsear los parámetros de la solicitud
