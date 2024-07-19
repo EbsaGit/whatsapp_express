@@ -73,7 +73,7 @@ app.get('/webhook', (req, res) => {
      
     // Verificar que el token y el modo son correctos
     if (mode && token) {
-        if (mode==="subcribe" && token === VERIFY_TOKEN) {
+        if (mode==="subscribe" && token === VERIFY_TOKEN) {
             res.status(200).send(challenge); 
         }else{
             res.sendStatus(403);  
