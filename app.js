@@ -13,6 +13,10 @@ connectDB();
 // Middleware para parsear JSON
 app.use(bodyParser.json());
 
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+  });
+
 // Endpoint para recibir y responder a los eventos de webhook
 app.post('/webhook', async (req, res) => {
     const body = req.body;
