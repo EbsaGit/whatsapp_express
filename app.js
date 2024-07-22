@@ -1,9 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const cors = require('cors'); // Importa cors
 const connectDB = require('./src/config/database');
 const Message = require('./src/models/Message');
 const axios = require('axios');
-const { formatInTimeZone } = require('date-fns-tz'); // Importa formatInTimeZone
+const { formatInTimeZone } = require('date-fns-tz');
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -15,8 +16,21 @@ connectDB();
 // Middleware para parsear JSON
 app.use(bodyParser.json());
 
+// Habilitar CORS para todas las rutas
+app.use(cors());
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
+});
+
+// Ruta para obtener todos los mensajes ordenados por recipient_phone
+app.get('/messages', async (req, res) => {
+  try {
+    const messages = await Message.find().sort({ recipient_phone: 1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los mensajes' });
+  }
 });
 
 // Endpoint para recibir y responder a los eventos de webhook
@@ -132,15 +146,6 @@ app.post('/api/message/send_save', async (req, res) => {
         res.sendStatus(403);
     }
 });
-
-app.get('/api/messages', async (req, res) => {
-    try {
-      const messages = await Message.find().sort({ recipient_phone: 1 });
-      res.status(200).json(messages);
-    } catch (error) {
-      res.status(500).json({ error: 'Error al obtener los mensajes' });
-    }
-  });
 
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
