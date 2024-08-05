@@ -92,41 +92,7 @@ imageRoutes.get("/get-media-url/:PHONE_NUMBER_ID/:media_id", async (req, res) =>
     }
 });
 
-// Nueva ruta para descargar la imagen usando media_id
-/*
-imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) => {
-    const authHeader = req.headers['authorization'];
-    const ACCESS_TOKEN = authHeader && authHeader.split(' ')[1];
-    const PHONE_NUMBER_ID = req.params.PHONE_NUMBER_ID;
-    const MEDIA_ID = req.params.media_id;
 
-    try {
-        // Primero, obtener la URL de la imagen
-        const response = await axios.get(`https://graph.facebook.com/v13.0/${MEDIA_ID}`, {
-            headers: {
-                'Authorization': `Bearer ${ACCESS_TOKEN}`
-            },
-            params: {
-                'phone_number_id': PHONE_NUMBER_ID
-            }
-        });
-
-        const mediaUrl = response.data.url;
-
-        // Descargar la imagen desde la URL
-        const imageResponse = await axios({
-            url: mediaUrl,
-            method: 'GET',
-            responseType: 'stream'
-        });
-
-        res.setHeader('Content-Disposition', `attachment; filename="${MEDIA_ID}.jpg"`);
-        imageResponse.data.pipe(res);
-    } catch (error) {
-        res.status(500).send(error.response ? error.response.data : error.message);
-    }
-});
-*/
 
 // Nueva ruta para descargar la imagen usando media_id
 imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) => {
@@ -151,6 +117,9 @@ imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) =
         // Descargar la imagen desde la URL
         const imageResponse = await axios({
             url: mediaUrl,
+            headers: {
+                'Authorization': `Bearer ${ACCESS_TOKEN}`
+            },
             method: 'GET',
             responseType: 'stream'
         });
@@ -160,6 +129,42 @@ imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) =
         res.setHeader('Content-Type', imageResponse.headers['content-type']);
 
         // Enviar el contenido de la imagen como una respuesta al cliente
+        imageResponse.data.pipe(res);
+    } catch (error) {
+        res.status(500).send(error.response ? error.response.data : error.message);
+    }
+});
+
+
+imageRoutes.get('/proxy-image/:media_id', async (req, res) => {
+    const ACCESS_TOKEN = req.query.access_token;  // Tomar el token de acceso desde los parámetros de la URL
+    const MEDIA_ID = req.params.media_id;
+
+    if (!ACCESS_TOKEN) {
+        return res.status(400).send('Access token is required');
+    }
+
+    try {
+        // Obtener la URL del medio
+        const response = await axios.get(`https://graph.facebook.com/v13.0/${MEDIA_ID}`, {
+            headers: {
+                'Authorization': `Bearer ${ACCESS_TOKEN}`
+            }
+        });
+
+        const mediaUrl = response.data.url;
+
+        // Descargar la imagen desde la URL y servirla
+        const imageResponse = await axios({
+            url: mediaUrl,
+            method: 'GET',
+            responseType: 'stream',
+            headers: {
+                'Authorization': `Bearer ${ACCESS_TOKEN}`
+            }
+        });
+
+        res.setHeader('Content-Type', imageResponse.headers['content-type']);
         imageResponse.data.pipe(res);
     } catch (error) {
         res.status(500).send(error.response ? error.response.data : error.message);
