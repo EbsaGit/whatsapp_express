@@ -9,6 +9,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 const MessageRoute = require('./src/routes/MessageRoute');
 const ZohoRoute = require('./src/routes/ZohoRoute');
+const imageRoutes = require('./src/routes/ImageRoutes');
 
 const VERIFY_TOKEN = "holamundo94";
 
@@ -29,6 +30,7 @@ app.get('/', (req, res) => {
 
 app.use('/api',MessageRoute);
 app.use('/api',ZohoRoute);
+app.use('/api',imageRoutes);
 
 
 // Endpoint para recibir y responder a los eventos de webhook
