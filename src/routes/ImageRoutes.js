@@ -3,7 +3,9 @@ const multer = require('multer');
 const axios = require('axios');
 const FormData = require('form-data');
 const fs = require('fs');
+const { formatInTimeZone } = require('date-fns-tz');
 const path = require('path');
+const Message = require('../models/Message')
 
 const imageRoutes = express.Router();
 
@@ -41,6 +43,13 @@ imageRoutes.post("/upload-image/:PHONE_NUMBER_ID/:recipient_phone", upload.singl
         });
 
         const mediaId = mediaResponse.data.id;
+        const createdTime = formatInTimeZone(
+            new Date(),
+            'America/Asuncion',
+            'yyyy-MM-dd HH:mm:ssXXX'
+        );
+
+        
 
         // Ahora envía el mensaje con la imagen usando el media_id
         const messageResponse = await axios.post(`https://graph.facebook.com/v13.0/${PHONE_NUMBER_ID}/messages`, {
@@ -57,7 +66,26 @@ imageRoutes.post("/upload-image/:PHONE_NUMBER_ID/:recipient_phone", upload.singl
             }
         });
 
-        res.send({send: messageResponse.data, image_id: mediaId});
+        console.log(messageResponse.data);
+
+        const NewMediaMessage = new Message({
+            recipient_phone: RECIPIENT_PHONE || 'unknown',  // Ajustar según tu estructura
+            message_id: messageResponse.data.messages[0].id,
+            display_phone_number: "15556242830",
+            display_phone_number_id: PHONE_NUMBER_ID,
+            conversation_id: 'unknown',  // Ajustar según tu estructura
+            /*message_text: ,*/
+            type: "meta",
+            contact: "Corporativo",
+            created_time: createdTime, // Formateado a la zona horaria de Asunción, Paraguay
+            media_id :mediaId,
+        })
+
+        const guardarMensaje = await NewMediaMessage.save();
+
+        console.log(guardarMensaje);
+
+        res.send({send: messageResponse.data, image_id: mediaId, mongoDB: guardarMensaje});
 
     } catch (error) {
         res.status(500).send(error.response ? error.response.data : error.message);

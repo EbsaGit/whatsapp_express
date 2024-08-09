@@ -10,7 +10,8 @@ const MessageSchema = new Schema({
   conversation_id: { type: String, required: false },
   message_text: { type: String, required: false },
   type: { type: String, required: false },
-  created_time: { type: Date, default: Date.now }
+  created_time: { type: Date, default: Date.now },
+  media_id : {type: String, required:false},
 });
 
 module.exports = mongoose.model('messages', MessageSchema,'messages');
