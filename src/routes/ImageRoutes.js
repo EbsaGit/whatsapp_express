@@ -279,7 +279,8 @@ imageRoutes.post("/upload-file/:PHONE_NUMBER_ID/:recipient_phone", upload.single
             contact: "Corporativo",
             created_time: createdTime,
             media_id: mediaId,
-            tipo_media: messageType
+            tipo_media: messageType,
+            file_name: messagePayload.filename,
         });
 
         const guardarMensaje = await NewMediaMessage.save();
@@ -287,6 +288,7 @@ imageRoutes.post("/upload-file/:PHONE_NUMBER_ID/:recipient_phone", upload.single
         console.log(guardarMensaje);
 
         res.send({send: messageResponse.data, media_id: mediaId, mongoDB: guardarMensaje});
+
 
     } catch (error) {
         res.status(500).send(error.response ? error.response.data : error.message);
