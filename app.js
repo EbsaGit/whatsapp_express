@@ -54,19 +54,38 @@ app.post('/webhook', async (req, res) => {
                             'yyyy-MM-dd HH:mm:ssXXX'
                         );
 
-                        const newMessage = new Message({
-                            recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
-                            message_id: message.id,
-                            display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
-                            display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
-                            conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
-                            message_text: message.text.body,
-                            type: "cliente",
-                            contact: body.entry[0].changes[0].value.contacts[0].profile.name,
-                            created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
-                        });
-                        const guardarMensaje = await newMessage.save();
-                        console.log(guardarMensaje);
+                         //if tipo mensaje
+
+                        if(message.type == "text" ){
+                            const newMessage = new Message({
+                                recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
+                                message_id: message.id,
+                                display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
+                                display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
+                                conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
+                                message_text: message.text.body,
+                                type: "cliente",
+                                contact: body.entry[0].changes[0].value.contacts[0].profile.name,
+                                created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
+                            });
+                            const guardarMensaje = await newMessage.save();
+                            console.log(guardarMensaje);
+                        }else if(message.type == "image"){
+                            const newMessage = new Message({
+                                recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
+                                message_id: message.id,
+                                display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
+                                display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
+                                conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
+                                // message_text: message.text.body,
+                                media_id: message.image.id,
+                                type: "cliente",
+                                contact: body.entry[0].changes[0].value.contacts[0].profile.name,
+                                created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
+                            });
+                            const guardarMensaje = await newMessage.save();
+                            console.log(guardarMensaje);
+                        }
                     }
                 }
                 res.status(200).send('EVENT_RECEIVED');
