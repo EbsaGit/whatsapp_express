@@ -12,6 +12,7 @@ const MessageSchema = new Schema({
   type: { type: String, required: false },
   created_time: { type: Date, default: Date.now },
   media_id : {type: String, required:false},
+  tipo_media: {type: String, required:false},
 });
 
 module.exports = mongoose.model('messages', MessageSchema,'messages');

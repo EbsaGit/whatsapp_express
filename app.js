@@ -70,7 +70,7 @@ app.post('/webhook', async (req, res) => {
                             });
                             const guardarMensaje = await newMessage.save();
                             console.log(guardarMensaje);
-                        }else if(message.type == "image"){
+                        }else{
                             const newMessage = new Message({
                                 recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
                                 message_id: message.id,
@@ -79,6 +79,7 @@ app.post('/webhook', async (req, res) => {
                                 conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
                                 // message_text: message.text.body,
                                 media_id: message.image.id,
+                                tipo_media: message.type,
                                 type: "cliente",
                                 contact: body.entry[0].changes[0].value.contacts[0].profile.name,
                                 created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay

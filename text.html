@@ -6,6 +6,39 @@
     <title>Document</title>
 </head>
 <body>
-    <img src="https://devtechpy.com/api/proxy-image/1229490085078853?access_token=EAAQ1oGRqNv8BOyrZCv0gpIqGEQpQYklyZAdW9nwQCpLCyZCwcZCfX8mPj3WZAXXp05v3VU5vBqpq9HVcIUqxU8XFRAZCcBtuIlIQMggOjug90LYLDN06TJi1mlrnTmPcA2f2TxD6Y8KfanVuPZAVAq9nSDZCOHbatRNRdgq50IEBJ1HlT3fxgjZA3bWwuxZC2OSAURmwgZCvcmsb4FrAomWEHD4qRNpNtvc" alt="Imagen de WhatsApp">
+    <canvas id="pdf-thumbnail"></canvas>
+
+    <img src="https://devtechpy.com/api/proxy-image/1205879800456415?access_token=EAAQ1oGRqNv8BOxbEKod6V63qKsqQi890tnrjHhu0XRzZBqlPiFwXVi8ZADDZCdsW0gCjQzZBt19qK3NDNyCRj0PAeeA3ZAs7AZCNekwyNqCzjuhUZCRwsZCZCkyZCgU5U9ewNjJbJaXm2YQh0RXwyMhENZBGnkV8rpGXZBjzhai3qC4f117Jm7hJgbgYtkvga83vMWRD88KFlBUwczWliZBAYRhBt48KsgGcZD" alt="Imagen de WhatsApp">
 </body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.7.570/pdf.min.js"></script>
+<script>
+    function generatePDFThumbnail(pdfUrl, canvasId) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext('2d');
+
+    // Cargar el PDF
+    pdfjsLib.getDocument(pdfUrl).promise.then(pdf => {
+        // Cargar la primera página
+        pdf.getPage(1).then(page => {
+            const viewport = page.getViewport({ scale: 0.2 }); // Ajusta la escala para el tamaño de la miniatura
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: viewport
+            };
+
+            // Renderizar la página en el canvas
+            page.render(renderContext);
+        });
+    }).catch(error => {
+        console.error("Error al cargar el PDF: ", error);
+    });
+}
+
+generatePDFThumbnail('https://devtechpy.com/api/proxy-image/1205879800456415?access_token=EAAQ1oGRqNv8BOxbEKod6V63qKsqQi890tnrjHhu0XRzZBqlPiFwXVi8ZADDZCdsW0gCjQzZBt19qK3NDNyCRj0PAeeA3ZAs7AZCNekwyNqCzjuhUZCRwsZCZCkyZCgU5U9ewNjJbJaXm2YQh0RXwyMhENZBGnkV8rpGXZBjzhai3qC4f117Jm7hJgbgYtkvga83vMWRD88KFlBUwczWliZBAYRhBt48KsgGcZD', 'pdf-thumbnail');
+
+
+</script>
 </html>
