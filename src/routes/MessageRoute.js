@@ -4,18 +4,16 @@ const axios = require('axios');
 const MessageRoute = express.Router();
 const { formatInTimeZone } = require('date-fns-tz');
 
-// Ruta para obtener todos los mensajes ordenados por recipient_phone
-
 MessageRoute.get('/messages', async (req, res) => {
     try {
-      const messages = await Message.find().sort({ recipient_phone: 1 });
-      res.status(200).json(messages);
+        const messages = await Message.find().sort({ recipient_phone: 1 });
+        res.status(200).json(messages);
     } catch (error) {
-      res.status(500).json({ error: 'Error al obtener los mensajes' });
+        res.status(500).json({ error: 'Error al obtener los mensajes' });
     }
- });
+});
 
- MessageRoute.post('/messages/send_save', async (req, res) => {
+MessageRoute.post('/messages/send_save', async (req, res) => {
     const body = req.body;
 
     const text = body.text;
@@ -68,10 +66,22 @@ MessageRoute.get('/messages', async (req, res) => {
             });
             const guardarMensaje = await newMessage.save();
             console.log(guardarMensaje);
+            
+            // Enviar el mensaje al WebSocket para que el frontend se actualice
+            wss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify(guardarMensaje)); // Enviar el mensaje al frontend
+                }
+            });
 
             res.sendStatus(200);
         } catch (error) {
-            res.sendStatus(403);
+            //Enviar respuesta con error al frontend para indicar el fallo en el envío
+            res.status(500).json({
+                error: true,
+                message: 'Error al enviar el mensaje.',
+                details: error.response ? error.response.data : error.message
+            });
         }
     } catch (error) {
         console.error("Error al enviar el mensaje:", error);
