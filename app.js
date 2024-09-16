@@ -6,6 +6,8 @@ const Message = require('./src/models/Message');
 const axios = require('axios');
 const { formatInTimeZone } = require('date-fns-tz');
 const app = express();
+const http = require('http'); // Importar http para crear servidor
+const WebSocket = require('ws'); // Importa la biblioteca ws
 const port = process.env.PORT || 3000;
 const MessageRoute = require('./src/routes/MessageRoute');
 const ZohoRoute = require('./src/routes/ZohoRoute');
@@ -22,16 +24,35 @@ app.use(bodyParser.json());
 // Habilitar CORS para todas las rutas
 app.use(cors());
 
+// Crear servidor HTTP
+const server = http.createServer(app);
+
+// Crear el servidor WebSocket
+const wss = new WebSocket.Server({ server });
+
+// Escuchar conexiones WebSocket
+wss.on('connection', (ws) => {
+    console.log('Nuevo cliente conectado por WebSocket.');
+
+    // Escuchar mensajes desde el cliente WebSocket
+    ws.on('message', (message) => {
+        console.log(`Mensaje recibido del cliente WebSocket: ${message}`);
+    });
+
+    // Manejar desconexiones
+    ws.on('close', () => {
+        console.log('Cliente WebSocket desconectado.');
+    });
+});
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
-//uso de las rutas
-
-app.use('/api',MessageRoute);
-app.use('/api',ZohoRoute);
-app.use('/api',imageRoutes);
-
+// Uso de las rutas
+app.use('/api', MessageRoute);
+app.use('/api', ZohoRoute);
+app.use('/api', imageRoutes);
 
 // Endpoint para recibir y responder a los eventos de webhook
 app.post('/webhook', async (req, res) => {
@@ -54,59 +75,57 @@ app.post('/webhook', async (req, res) => {
                             'yyyy-MM-dd HH:mm:ssXXX'
                         );
 
-                         //if tipo mensaje
-
-                        if(message.type == "text" ){
-                            const newMessage = new Message({
-                                recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
+                        let newMessage;
+                        if (message.type == "text") {
+                            newMessage = new Message({
+                                recipient_phone: message.from || 'unknown', 
                                 message_id: message.id,
                                 display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
                                 display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
-                                conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
+                                conversation_id: message.context ? message.context.id : 'unknown',
                                 message_text: message.text.body,
                                 type: "cliente",
                                 contact: body.entry[0].changes[0].value.contacts[0].profile.name,
-                                created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
+                                created_time: createdTime
                             });
-                            const guardarMensaje = await newMessage.save();
-                            console.log(guardarMensaje);
-                        }else if(message.type == "image"){
-                            const newMessage = new Message({
-                                recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
+                        } else if (message.type == "image") {
+                            newMessage = new Message({
+                                recipient_phone: message.from || 'unknown', 
                                 message_id: message.id,
                                 display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
                                 display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
-                                conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
-                                // message_text: message.text.body,
+                                conversation_id: message.context ? message.context.id : 'unknown',
                                 media_id: message.image.id,
                                 tipo_media: message.type,
                                 type: "cliente",
                                 contact: body.entry[0].changes[0].value.contacts[0].profile.name,
-                                created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
+                                created_time: createdTime
                             });
-                            const guardarMensaje = await newMessage.save();
-                            console.log(guardarMensaje);
-                        }
-                        else if(message.type == "document"){
-                            const newMessage = new Message({
-                                recipient_phone: message.from || 'unknown',  // Ajustar según tu estructura
+                        } else if (message.type == "document") {
+                            newMessage = new Message({
+                                recipient_phone: message.from || 'unknown',
                                 message_id: message.id,
                                 display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
                                 display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
-                                conversation_id: message.context ? message.context.id : 'unknown',  // Ajustar según tu estructura
-                                // message_text: message.text.body,
+                                conversation_id: message.context ? message.context.id : 'unknown',
                                 media_id: message.document.id,
                                 file_name: message.document.filename,
                                 tipo_media: message.type,
                                 type: "cliente",
                                 contact: body.entry[0].changes[0].value.contacts[0].profile.name,
-                                created_time: createdTime  // Formateado a la zona horaria de Asunción, Paraguay
+                                created_time: createdTime
                             });
-                            const guardarMensaje = await newMessage.save();
-                            console.log(guardarMensaje);
                         }
 
-                        
+                        const guardarMensaje = await newMessage.save();
+                        console.log(guardarMensaje);
+
+                        // Emitir el mensaje nuevo a través del WebSocket
+                        wss.clients.forEach((client) => {
+                            if (client.readyState === WebSocket.OPEN) {
+                                client.send(JSON.stringify(guardarMensaje));
+                            }
+                        });
                     }
                 }
                 res.status(200).send('EVENT_RECEIVED');
@@ -122,7 +141,6 @@ app.post('/webhook', async (req, res) => {
         res.sendStatus(404);
     }
 });
-
 
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
@@ -149,6 +167,7 @@ app.get('/webhook', (req, res) => {
     }
 });
 
-app.listen(port, () => {
+// Iniciar el servidor en el puerto especificado
+server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
