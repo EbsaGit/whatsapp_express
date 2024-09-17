@@ -13,6 +13,48 @@ MessageRoute.get('/messages', async (req, res) => {
     }
 });
 
+//Retorna lista agrupada de chats
+MessageRoute.get('/messages/grouped', async (req, res) => {
+    try {
+        console.log("Obteniendo mensajes agrupados");
+        const groupedMessages = await Message.aggregate([
+            {
+                $match: {
+                    recipient_phone: { $ne: null } // Filtrar registros donde recipient_phone no sea null
+                }
+            },
+            {
+                $group: {
+                    _id: "$recipient_phone", // Agrupar por recipient_phone
+                    contact: { $first: "$contact" } // Obtener el primer contacto asociado
+                }
+            },
+            {
+                $project: {
+                    _id: 0, // Excluir el _id
+                    recipient_phone: "$_id", // Renombrar _id a recipient_phone
+                    contact: 1 // Incluir el campo contact
+                }
+            }
+        ]);
+
+        res.status(200).json(groupedMessages);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los mensajes agrupados' });
+    }
+});
+
+//Obtener registros por recipient_phone
+MessageRoute.get('/messages/:recipient_phone', async (req, res) => {
+    const recipient_phone = req.params.recipient_phone;
+    try {
+        const messages = await Message.find({ recipient_phone: recipient_phone }).sort({ created_time: 1 });
+        res.status(200).json(messages);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los mensajes' });
+    }
+});
+
 MessageRoute.post('/messages/send_save', async (req, res) => {
     const body = req.body;
 
@@ -90,4 +132,3 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
 });
 
 module.exports = MessageRoute;
-
