@@ -3,15 +3,12 @@ const bodyParser = require('body-parser');
 const cors = require('cors'); // Importa cors
 const connectDB = require('./src/config/database');
 const Message = require('./src/models/Message');
-const axios = require('axios');
-const { formatInTimeZone } = require('date-fns-tz');
-const app = express();
 const http = require('http'); // Importar http para crear servidor
 const WebSocket = require('ws'); // Importa la biblioteca ws
+const { formatInTimeZone } = require('date-fns-tz');
+
+const app = express();
 const port = process.env.PORT || 3000;
-const MessageRoute = require('./src/routes/MessageRoute');
-const ZohoRoute = require('./src/routes/ZohoRoute');
-const imageRoutes = require('./src/routes/ImageRoutes');
 
 const VERIFY_TOKEN = "holamundo94";
 
@@ -45,12 +42,16 @@ wss.on('connection', (ws) => {
     });
 });
 
+const MessageRoute = require('./src/routes/MessageRoute')(wss);
+const ZohoRoute = require('./src/routes/ZohoRoute');
+const imageRoutes = require('./src/routes/ImageRoutes');
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });
 
 // Uso de las rutas
-app.use('/api', MessageRoute(wss));
+app.use('/api', MessageRoute);
 app.use('/api', ZohoRoute);
 app.use('/api', imageRoutes);
 
@@ -183,6 +184,3 @@ app.get('/webhook', (req, res) => {
 server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
-
-// Exportar wss para que otros archivos puedan usarlo
-module.exports = { wss };

@@ -175,6 +175,7 @@ module.exports = (wss) => {
                 console.log(guardarMensaje);
 
                 // Emitir el mensaje nuevo a través del WebSocket
+                console.log("WSS: ", wss);
                 wss.clients.forEach((client) => {
                     if (client.readyState === WebSocket.OPEN) {
                         // Transformar el mensaje al formato requerido
