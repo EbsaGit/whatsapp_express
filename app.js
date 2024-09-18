@@ -30,9 +30,6 @@ const server = http.createServer(app);
 // Crear el servidor WebSocket
 const wss = new WebSocket.Server({ server });
 
-// Exportar wss para que otros archivos puedan usarlo
-module.exports = { wss };
-
 // Escuchar conexiones WebSocket
 wss.on('connection', (ws) => {
     console.log('Nuevo cliente conectado por WebSocket.');
@@ -186,3 +183,6 @@ app.get('/webhook', (req, res) => {
 server.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+// Exportar wss para que otros archivos puedan usarlo
+module.exports = { wss };
