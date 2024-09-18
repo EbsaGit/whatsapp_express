@@ -123,7 +123,19 @@ app.post('/webhook', async (req, res) => {
                         // Emitir el mensaje nuevo a través del WebSocket
                         wss.clients.forEach((client) => {
                             if (client.readyState === WebSocket.OPEN) {
-                                client.send(JSON.stringify(guardarMensaje));
+                                // Transformar el mensaje al formato requerido
+                                const formattedMessage = {
+                                    text: guardarMensaje.message_text,
+                                    sender: guardarMensaje.type === "meta" ? "sent" : "received",
+                                    time: new Date(guardarMensaje.created_time), // Asegurarse de formatear la fecha correctamente
+                                    message_id: guardarMensaje.message_id,
+                                    media_id: guardarMensaje.media_id,
+                                    tipo_media: guardarMensaje.tipo_media,
+                                    file_name: guardarMensaje.file_name || '', // Nombre del archivo si aplica
+                                };
+
+                                // Enviar el mensaje formateado al cliente WebSocket
+                                client.send(JSON.stringify(formattedMessage));
                             }
                         });
                     }

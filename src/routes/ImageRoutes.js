@@ -120,8 +120,6 @@ imageRoutes.get("/get-media-url/:PHONE_NUMBER_ID/:media_id", async (req, res) =>
     }
 });
 
-
-
 // Nueva ruta para descargar la imagen usando media_id
 imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) => {
     const authHeader = req.headers['authorization'];
@@ -163,7 +161,6 @@ imageRoutes.get("/download-image/:PHONE_NUMBER_ID/:media_id", async (req, res) =
     }
 });
 
-
 imageRoutes.get('/proxy-image/:media_id', async (req, res) => {
     const ACCESS_TOKEN = req.query.access_token;  // Tomar el token de acceso desde los parámetros de la URL
     const MEDIA_ID = req.params.media_id;
@@ -200,7 +197,6 @@ imageRoutes.get('/proxy-image/:media_id', async (req, res) => {
 });
 
 //upload file 
-
 imageRoutes.post("/upload-file/:PHONE_NUMBER_ID/:recipient_phone", upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).send("No se proporcionó ningún archivo.");
@@ -298,7 +294,6 @@ imageRoutes.post("/upload-file/:PHONE_NUMBER_ID/:recipient_phone", upload.single
         });
     }
 });
-
 
 //end file
 
