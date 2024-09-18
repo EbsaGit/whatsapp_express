@@ -183,11 +183,13 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
                     const formattedMessage = {
                         text: guardarMensaje.message_text,
                         sender: guardarMensaje.type === "meta" ? "sent" : "received",
+                        recipient_phone: guardarMensaje.recipient_phone,
+                        contact: guardarMensaje.contact,
                         time: new Date(guardarMensaje.created_time), // Asegurarse de formatear la fecha correctamente
                         message_id: guardarMensaje.message_id,
                         media_id: guardarMensaje.media_id,
                         tipo_media: guardarMensaje.tipo_media,
-                        file_name: guardarMensaje.file_name || '', // Nombre del archivo si aplica
+                        file_name: guardarMensaje.file_name || '',
                     };
 
                     // Enviar el mensaje formateado al cliente WebSocket

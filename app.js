@@ -114,6 +114,8 @@ app.post('/webhook', async (req, res) => {
                                 const formattedMessage = {
                                     text: guardarMensaje.message_text,
                                     sender: guardarMensaje.type === "meta" ? "sent" : "received",
+                                    recipient_phone: guardarMensaje.recipient_phone,
+                                    contact: guardarMensaje.contact,
                                     time: new Date(guardarMensaje.created_time), // Asegurarse de formatear la fecha correctamente
                                     message_id: guardarMensaje.message_id,
                                     media_id: guardarMensaje.media_id,
