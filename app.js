@@ -50,7 +50,7 @@ app.get('/', (req, res) => {
 });
 
 // Uso de las rutas
-app.use('/api', MessageRoute);
+app.use('/api', MessageRoute(wss));
 app.use('/api', ZohoRoute);
 app.use('/api', imageRoutes);
 
