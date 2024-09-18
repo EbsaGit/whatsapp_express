@@ -193,7 +193,8 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
                     };
 
                     // Enviar el mensaje formateado al cliente WebSocket
-                    client.send(JSON.stringify(formattedMessage));
+                    //Comentado por ahora
+                    //client.send(JSON.stringify(formattedMessage));
                 }
             });
 
