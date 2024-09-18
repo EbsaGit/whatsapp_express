@@ -3,6 +3,7 @@ const Message = require('../models/Message');
 const axios = require('axios');
 const MessageRoute = express.Router();
 const { formatInTimeZone } = require('date-fns-tz');
+const { wss } = require('../../app');
 
 MessageRoute.get('/messages', async (req, res) => {
     try {
@@ -174,7 +175,6 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
             console.log(guardarMensaje);
 
             // Emitir el mensaje nuevo a través del WebSocket
-            const wss = req.app.locals.wss; // Acceder a wss desde app.locals
             wss.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) {
                     // Transformar el mensaje al formato requerido
