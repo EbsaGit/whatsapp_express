@@ -198,7 +198,7 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
                 }
             });
 
-            res.sendStatus(200);
+            res.status(200).json(guardarMensaje);
         } catch (error) {
             //Enviar respuesta con error al frontend para indicar el fallo en el envío
             res.status(500).json({
