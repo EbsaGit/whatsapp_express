@@ -5,6 +5,7 @@ const connectDB = require('./src/config/database');
 const { initWebSocket, getWebSocket } = require('./src/config/websocket');
 const Message = require('./src/models/Message');
 const http = require('http'); // Importar http para crear servidor
+const WebSocket = require('ws');
 const { formatInTimeZone } = require('date-fns-tz');
 
 const app = express();

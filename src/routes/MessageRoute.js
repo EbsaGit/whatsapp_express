@@ -4,6 +4,7 @@ const axios = require('axios');
 const MessageRoute = express.Router();
 const { formatInTimeZone } = require('date-fns-tz');
 const { getWebSocket } = require('../config/websocket');
+const WebSocket = require('ws');
 
 MessageRoute.get('/messages', async (req, res) => {
     try {
