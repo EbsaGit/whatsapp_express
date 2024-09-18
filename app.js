@@ -105,7 +105,7 @@ app.post('/webhook', async (req, res) => {
 
                         const guardarMensaje = await newMessage.save();
                         console.log(guardarMensaje);
-                        console.log("Enviando e WS...");
+                        console.log("Enviando e WS....");
                         const wss = getWebSocket();
                         // Emitir el mensaje nuevo a través del WebSocket
                         wss.clients.forEach((client) => {
