@@ -105,6 +105,7 @@ app.post('/webhook', async (req, res) => {
 
                         const guardarMensaje = await newMessage.save();
                         console.log(guardarMensaje);
+                        console.log("Enviando e WS...");
                         const wss = getWebSocket();
                         // Emitir el mensaje nuevo a través del WebSocket
                         wss.clients.forEach((client) => {
@@ -119,7 +120,8 @@ app.post('/webhook', async (req, res) => {
                                     tipo_media: guardarMensaje.tipo_media,
                                     file_name: guardarMensaje.file_name || '', // Nombre del archivo si aplica
                                 };
-
+                                console.log("mensaje:", formattedMessage);
+                                console.log("Client:", client);
                                 // Enviar el mensaje formateado al cliente WebSocket
                                 client.send(JSON.stringify(formattedMessage));
                             }
