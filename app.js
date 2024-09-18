@@ -30,6 +30,9 @@ const server = http.createServer(app);
 // Crear el servidor WebSocket
 const wss = new WebSocket.Server({ server });
 
+// Almacenar wss en app.locals para que esté disponible en todas las rutas
+app.locals.wss = wss;
+
 // Escuchar conexiones WebSocket
 wss.on('connection', (ws) => {
     console.log('Nuevo cliente conectado por WebSocket.');

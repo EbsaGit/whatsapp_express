@@ -172,8 +172,9 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
             });
             const guardarMensaje = await newMessage.save();
             console.log(guardarMensaje);
-            
+
             // Emitir el mensaje nuevo a través del WebSocket
+            const wss = req.app.locals.wss; // Acceder a wss desde app.locals
             wss.clients.forEach((client) => {
                 if (client.readyState === WebSocket.OPEN) {
                     // Transformar el mensaje al formato requerido
