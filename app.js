@@ -45,11 +45,11 @@ app.post('/webhook', async (req, res) => {
     const body = req.body;
     // Verifica y maneja el evento del webhook de WhatsApp
     if (body.object) {
-        console.log('Webhook received:', JSON.stringify(body, null, 2));
 
         // Procesa los mensajes aquí
         if (body.entry && body.entry[0].changes && body.entry[0].changes[0].value.messages) {
             const messages = body.entry[0].changes[0].value.messages;
+            console.log('Webhook received');
             try {
                 for (const message of messages) {
                     // Filtra los mensajes que tienen el campo "from"
