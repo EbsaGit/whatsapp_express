@@ -1,10 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
+const cors = require('cors'); // Importa cors
 const connectDB = require('./src/config/database');
-const Message = require('./src/models/Message');
-const http = require('http'); //Importar http para crear servidor
 const { initWebSocket, getWebSocket } = require('./src/config/websocket');
+const Message = require('./src/models/Message');
+const http = require('http'); // Importar http para crear servidor
 const { formatInTimeZone } = require('date-fns-tz');
 
 const app = express();
@@ -24,7 +24,6 @@ app.use(cors());
 // Crear servidor HTTP
 const server = http.createServer(app);
 
-// Inicializa WebSocket después de crear el servidor HTTP
 initWebSocket(server);
 
 const MessageRoute = require('./src/routes/MessageRoute');
@@ -43,7 +42,6 @@ app.use('/api', imageRoutes);
 // Endpoint para recibir y responder a los eventos de webhook
 app.post('/webhook', async (req, res) => {
     const body = req.body;
-    const wss = getWebSocket();
     // Verifica y maneja el evento del webhook de WhatsApp
     if (body.object) {
         console.log('Webhook received:', JSON.stringify(body, null, 2));
@@ -106,7 +104,7 @@ app.post('/webhook', async (req, res) => {
 
                         const guardarMensaje = await newMessage.save();
                         console.log(guardarMensaje);
-
+                        const wss = getWebSocket();
                         // Emitir el mensaje nuevo a través del WebSocket
                         wss.clients.forEach((client) => {
                             if (client.readyState === WebSocket.OPEN) {

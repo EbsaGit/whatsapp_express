@@ -1,9 +1,9 @@
 const WebSocket = require('ws');
 let wss = null;
-
-const initWebSocket = (server) => {
+             
+const initWebSocket = async (server) => {
+  try {
     wss = new WebSocket.Server({ server });
-    
     // Manejo de conexión
     wss.on('connection', (ws) => {
         console.log('Nuevo cliente conectado por WebSocket.');
@@ -14,6 +14,9 @@ const initWebSocket = (server) => {
             console.log('Cliente WebSocket desconectado.');
         });
     });
+  } catch (err) {
+    console.error('Error al conectar WebSocket');
+  }
 };
 
 const getWebSocket = () => {
