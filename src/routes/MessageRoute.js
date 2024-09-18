@@ -1,9 +1,10 @@
-module.exports = (wss) => {
+module.exports = () => {
     const express = require('express');
     const Message = require('../models/Message');
     const axios = require('axios');
     const MessageRoute = express.Router();
     const { formatInTimeZone } = require('date-fns-tz');
+    const { getWebSocket } = require('../config/websocket');
 
     MessageRoute.get('/messages', async (req, res) => {
         try {
@@ -122,7 +123,7 @@ module.exports = (wss) => {
 
     MessageRoute.post('/messages/send_save', async (req, res) => {
         const body = req.body;
-
+        const wss = getWebSocket();
         const text = body.text;
         const phoneRecipiest = body.phoneRecipiest;
         const Phone_Number_ID = body.Phone_Number_ID;
@@ -176,20 +177,18 @@ module.exports = (wss) => {
 
                 // Emitir el mensaje nuevo a través del WebSocket
                 console.log("WSS: ", wss);
+                // Emitir el mensaje nuevo a través del WebSocket
                 wss.clients.forEach((client) => {
                     if (client.readyState === WebSocket.OPEN) {
-                        // Transformar el mensaje al formato requerido
                         const formattedMessage = {
                             text: guardarMensaje.message_text,
                             sender: guardarMensaje.type === "meta" ? "sent" : "received",
-                            time: new Date(guardarMensaje.created_time), // Asegurarse de formatear la fecha correctamente
+                            time: new Date(guardarMensaje.created_time),
                             message_id: guardarMensaje.message_id,
                             media_id: guardarMensaje.media_id,
                             tipo_media: guardarMensaje.tipo_media,
-                            file_name: guardarMensaje.file_name || '', // Nombre del archivo si aplica
+                            file_name: guardarMensaje.file_name || '',
                         };
-
-                        // Enviar el mensaje formateado al cliente WebSocket
                         client.send(JSON.stringify(formattedMessage));
                     }
                 });

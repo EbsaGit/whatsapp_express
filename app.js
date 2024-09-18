@@ -1,10 +1,10 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors'); // Importa cors
+const cors = require('cors');
 const connectDB = require('./src/config/database');
 const Message = require('./src/models/Message');
-const http = require('http'); // Importar http para crear servidor
-const WebSocket = require('ws'); // Importa la biblioteca ws
+const http = require('http'); //Importar http para crear servidor
+const { initWebSocket, getWebSocket } = require('./src/config/websocket');
 const { formatInTimeZone } = require('date-fns-tz');
 
 const app = express();
@@ -24,25 +24,10 @@ app.use(cors());
 // Crear servidor HTTP
 const server = http.createServer(app);
 
-// Crear el servidor WebSocket
-const wss = new WebSocket.Server({ server });
+// Inicializa WebSocket después de crear el servidor HTTP
+initWebSocket(server);
 
-// Escuchar conexiones WebSocket
-wss.on('connection', (ws) => {
-    console.log('Nuevo cliente conectado por WebSocket.');
-
-    // Escuchar mensajes desde el cliente WebSocket
-    ws.on('message', (message) => {
-        console.log(`Mensaje recibido del cliente WebSocket: ${message}`);
-    });
-
-    // Manejar desconexiones
-    ws.on('close', () => {
-        console.log('Cliente WebSocket desconectado.');
-    });
-});
-
-const MessageRoute = require('./src/routes/MessageRoute')(wss);
+const MessageRoute = require('./src/routes/MessageRoute');
 const ZohoRoute = require('./src/routes/ZohoRoute');
 const imageRoutes = require('./src/routes/ImageRoutes');
 
@@ -58,6 +43,7 @@ app.use('/api', imageRoutes);
 // Endpoint para recibir y responder a los eventos de webhook
 app.post('/webhook', async (req, res) => {
     const body = req.body;
+    const wss = getWebSocket();
     // Verifica y maneja el evento del webhook de WhatsApp
     if (body.object) {
         console.log('Webhook received:', JSON.stringify(body, null, 2));
