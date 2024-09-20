@@ -115,7 +115,7 @@ MessageRoute.get('/messages/:phone/paginated', async (req, res) => {
             file_name: record.file_name || '', // Nombre del archivo si aplica
         }));
 
-        res.status(200).json(formattedMessages.reverse());
+        res.status(200).json(formattedMessages);
     } catch (error) {
         res.status(500).json({ error: 'Error al obtener los mensajes paginados' });
     }
