@@ -224,6 +224,7 @@ async function handleChatMessage(phone) {
             // Si no existe, crea un nuevo registro
             const newChat = new Chat({
                 phone: phone,
+                contact: phone,
             });
             await newChat.save();
         }
@@ -231,5 +232,58 @@ async function handleChatMessage(phone) {
         console.error("Error al manejar el chat:", error);
     }
 }
+
+// Retorna lista agrupada de chats con el último mensaje de cada uno, ordenada por el tiempo del último mensaje
+MessageRoute.get('/messages/chats', async (req, res) => {
+    try {
+        // Obtener todos los registros de la colección 'chats'
+        const chats = await Chat.find();
+
+        // Para cada chat, obtener el último mensaje asociado
+        const groupedChats = await Promise.all(chats.map(async (chat) => {
+            // Obtener el último mensaje de la colección 'messages' para cada chat
+            const lastMessage = await Message.findOne({ recipient_phone: chat.phone })
+                                             .sort({ created_time: -1 }); // Obtener el último mensaje
+
+            // Calcular si el chat está activo (dentro de las 24 horas de lastResponseTime)
+            let chatActivo = false;
+            if (chat.lastResponseTime) {
+                const timeDiff = new Date() - new Date(chat.lastResponseTime);
+                const hoursDiff = timeDiff / (1000 * 60 * 60); // Diferencia en horas
+                chatActivo = hoursDiff <= 24; // Si la diferencia es menor o igual a 24 horas, es true
+            }
+
+            return {
+                name: chat.contact,
+                phone: chat.phone,
+                messages: lastMessage ? [
+                    {
+                        text: lastMessage.message_text,
+                        sender: lastMessage.type === "meta" ? "sent" : "received",
+                        time: new Date(lastMessage.created_time),
+                        message_id: lastMessage.message_id,
+                        media_id: lastMessage.media_id,
+                        tipo_media: lastMessage.tipo_media,
+                        file_name: lastMessage.file_name || '',
+                    }
+                ] : [], // Si no hay mensajes, se retorna una lista vacía
+                lastMessageTime: lastMessage ? new Date(lastMessage.created_time) : null,
+                chatActivo: chatActivo // Si han pasado más de 24 horas, será false, si no, true
+            };
+        }));
+
+        // Ordenar los chats por el tiempo del último mensaje (campo 'lastMessageTime')
+        const sortedChats = groupedChats.sort((a, b) => {
+            if (!a.lastMessageTime) return 1;  // Si el chat A no tiene mensajes, va después
+            if (!b.lastMessageTime) return -1; // Si el chat B no tiene mensajes, va después
+            return b.lastMessageTime - a.lastMessageTime; // Ordenar de más reciente a más antiguo
+        });
+
+        // Enviar el resultado como respuesta en el mismo formato que el endpoint '/messages/grouped'
+        res.status(200).json(sortedChats);
+    } catch (error) {
+        res.status(500).json({ error: 'Error al obtener los chats agrupados con el último mensaje' });
+    }
+});
 
 module.exports = MessageRoute;
