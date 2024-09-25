@@ -1,5 +1,6 @@
 const express = require('express');
 const Message = require('../models/Message');
+const Chat = require('../models/Chat');
 const axios = require('axios');
 const MessageRoute = express.Router();
 const { formatInTimeZone } = require('date-fns-tz');
@@ -24,7 +25,7 @@ MessageRoute.get('/messages/grouped', async (req, res) => {
         // Agrupar los mensajes por recipient_phone
         const groupedChats = messages.reduce((groupedChats, record) => {
             const phone = record.recipient_phone;
-            
+
             // Si no existe un grupo para ese número de teléfono, crearlo
             if (!groupedChats[phone]) {
                 groupedChats[phone] = {
@@ -152,7 +153,7 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
         });
 
         const data = response.data;
-        console.log("Mensaje enviado:", data);
+        console.log("Mensaje enviado Response:", data);
 
         try {
             const createdTime = formatInTimeZone(
@@ -174,6 +175,8 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
             });
             const guardarMensaje = await newMessage.save();
             console.log(guardarMensaje);
+
+            await handleChatMessage(guardarMensaje.recipient_phone);
 
             // Emitir el mensaje nuevo a través del WebSocket
             const wss = getWebSocket();
@@ -197,7 +200,6 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
                     //client.send(JSON.stringify(formattedMessage));
                 }
             });
-
             res.status(200).json(guardarMensaje);
         } catch (error) {
             //Enviar respuesta con error al frontend para indicar el fallo en el envío
@@ -212,5 +214,22 @@ MessageRoute.post('/messages/send_save', async (req, res) => {
         res.sendStatus(403);
     }
 });
+
+//Función para crear o actualizar chat
+async function handleChatMessage(phone) {
+    try {
+        let chat = await Chat.findOne({ phone: phone });
+
+        if (!chat) {
+            // Si no existe, crea un nuevo registro
+            const newChat = new Chat({
+                phone: phone,
+            });
+            await newChat.save();
+        }
+    } catch (error) {
+        console.error("Error al manejar el chat:", error);
+    }
+}
 
 module.exports = MessageRoute;

@@ -64,7 +64,7 @@ app.post('/webhook', async (req, res) => {
                         let newMessage;
                         if (message.type == "text") {
                             newMessage = new Message({
-                                recipient_phone: message.from || 'unknown', 
+                                recipient_phone: message.from || 'unknown',
                                 message_id: message.id,
                                 display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
                                 display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
@@ -76,7 +76,7 @@ app.post('/webhook', async (req, res) => {
                             });
                         } else if (message.type == "image") {
                             newMessage = new Message({
-                                recipient_phone: message.from || 'unknown', 
+                                recipient_phone: message.from || 'unknown',
                                 message_id: message.id,
                                 display_phone_number: body.entry[0].changes[0].value.metadata.display_phone_number,
                                 display_phone_number_id: body.entry[0].changes[0].value.metadata.phone_number_id,
@@ -105,6 +105,9 @@ app.post('/webhook', async (req, res) => {
 
                         const guardarMensaje = await newMessage.save();
                         console.log(guardarMensaje);
+                        let contact = body.entry[0].changes[0].value.contacts[0].profile.name;
+                        let phone = message.from;
+                        await handleChatMessage(phone, contact);
                         console.log("Enviando e WS....");
                         const wss = getWebSocket();
                         // Emitir el mensaje nuevo a través del WebSocket
@@ -143,6 +146,29 @@ app.post('/webhook', async (req, res) => {
         res.sendStatus(404);
     }
 });
+
+// Función para crear o actualizar chat
+async function handleChatMessage(phone, contact) {
+    try {
+        let chat = await Chat.findOne({ phone: phone });
+
+        if (chat) {
+            // Si el chat ya existe, actualiza lastResponseTime y contact
+            chat.lastResponseTime = Date.now();
+            await chat.save();
+        } else {
+            // Si no existe, crea un nuevo registro
+            const newChat = new Chat({
+                phone: phone,
+                contact: contact,
+                lastResponseTime: Date.now()
+            });
+            await newChat.save();
+        }
+    } catch (error) {
+        console.error("Error al crear el chat:", error);
+    }
+}
 
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
