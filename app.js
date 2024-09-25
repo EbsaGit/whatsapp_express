@@ -4,6 +4,7 @@ const cors = require('cors'); // Importa cors
 const connectDB = require('./src/config/database');
 const { initWebSocket, getWebSocket } = require('./src/config/websocket');
 const Message = require('./src/models/Message');
+const Chat = require('./src/models/Chat');
 const http = require('http'); // Importar http para crear servidor
 const WebSocket = require('ws');
 const { formatInTimeZone } = require('date-fns-tz');
