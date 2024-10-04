@@ -268,7 +268,8 @@ MessageRoute.get('/messages/chats', async (req, res) => {
                     }
                 ] : [], // Si no hay mensajes, se retorna una lista vacía
                 lastMessageTime: lastMessage ? new Date(lastMessage.created_time) : null,
-                chatActivo: chatActivo // Si han pasado más de 24 horas, será false, si no, true
+                chatActivo: chatActivo, // Si han pasado más de 24 horas, será false, si no, true
+                unreadMessages: chat.unreadMessages ? chat.unreadMessages : false,
             };
         }));
 
