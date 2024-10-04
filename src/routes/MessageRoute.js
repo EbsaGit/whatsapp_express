@@ -294,13 +294,4 @@ MessageRoute.put('/messages/chats/mark-as-read/:phone', (req, res) => {
         .catch((error) => res.status(500).json({ error }));
 });
 
-// Marca Chat como No leido
-MessageRoute.put('/messages/chats/new-message/:phone', (req, res) => {
-    const { phone } = req.params;
-    Chat.updateOne({ phone }, { unreadMessages: true })
-      .then(() => res.status(200).json({ message: 'Chat marked as unread' }))
-      .catch((error) => res.status(500).json({ error }));
-  });
-  
-
 module.exports = MessageRoute;

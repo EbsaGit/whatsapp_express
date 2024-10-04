@@ -156,13 +156,15 @@ async function handleChatMessage(phone, contact) {
         if (chat) {
             // Si el chat ya existe, actualiza lastResponseTime y contact
             chat.lastResponseTime = Date.now();
+            chat.unreadMessages = true;
             await chat.save();
         } else {
             // Si no existe, crea un nuevo registro
             const newChat = new Chat({
                 phone: phone,
                 contact: contact,
-                lastResponseTime: Date.now()
+                lastResponseTime: Date.now(),
+                unreadMessages: true
             });
             await newChat.save();
         }
