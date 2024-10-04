@@ -6,7 +6,8 @@ const ChatSchema = new Schema({
   contact: { type: String, required: false },
   zcrm_owner: { type: String, default: "Admin" },
   created_time: { type: Date, default: Date.now },
-  lastResponseTime: { type: Date }
+  lastResponseTime: { type: Date },
+  unreadMessages: { type: Boolean, default: false }
 });
 
 module.exports = mongoose.model('chats', ChatSchema, 'chats');

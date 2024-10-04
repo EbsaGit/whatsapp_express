@@ -243,7 +243,7 @@ MessageRoute.get('/messages/chats', async (req, res) => {
         const groupedChats = await Promise.all(chats.map(async (chat) => {
             // Obtener el último mensaje de la colección 'messages' para cada chat
             const lastMessage = await Message.findOne({ recipient_phone: chat.phone })
-                                             .sort({ created_time: -1 }); // Obtener el último mensaje
+                .sort({ created_time: -1 }); // Obtener el último mensaje
 
             // Calcular si el chat está activo (dentro de las 24 horas de lastResponseTime)
             let chatActivo = false;
@@ -285,5 +285,22 @@ MessageRoute.get('/messages/chats', async (req, res) => {
         res.status(500).json({ error: 'Error al obtener los chats agrupados con el último mensaje' });
     }
 });
+
+// Marca Chat como leido
+MessageRoute.put('/messages/chats/mark-as-read/:phone', (req, res) => {
+    const { phone } = req.params;
+    Chat.updateOne({ phone }, { unreadMessages: false })
+        .then(() => res.status(200).json({ message: 'Chat marked as read' }))
+        .catch((error) => res.status(500).json({ error }));
+});
+
+// Marca Chat como No leido
+MessageRoute.put('/messages/chats/new-message/:phone', (req, res) => {
+    const { phone } = req.params;
+    Chat.updateOne({ phone }, { unreadMessages: true })
+      .then(() => res.status(200).json({ message: 'Chat marked as unread' }))
+      .catch((error) => res.status(500).json({ error }));
+  });
+  
 
 module.exports = MessageRoute;
