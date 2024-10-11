@@ -64,8 +64,7 @@ ZohoRoute.post('/exchange-token/:code', async (req, res) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
-    const accessToken = response.data.access_token;
-    res.json({ accessToken });
+    res.status(200).send(response.data);
   } catch (error) {
     res.status(500).json({ message: 'Error al intercambiar el código por token', error: error.response.data });
   }
