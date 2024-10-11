@@ -45,4 +45,37 @@ ZohoRoute.get("/zoho/getAccessToken", async (req, res) => {
   }
 });
 
+ZohoRoute.put('/exchange-token/:code', (req, res) => {
+  const { phone } = req.params;
+  Chat.updateOne({ phone }, { unreadMessages: false })
+      .then(() => res.status(200).json({ message: 'Chat marked as read' }))
+      .catch((error) => res.status(500).json({ error }));
+});
+
+ZohoRoute.post('/exchange-token/:code', async (req, res) => {
+  const { code } = req.params;
+  const clientId = '1000.IPKDV3NR9Y1HJZ3RQA2K0IR97BS2JB';
+  const clientSecret = 'ff9572e084d37550aa2c36b1fbb586b641b85e2701';
+  const redirectUri = 'http://localhost:4200/chats';
+
+  const data = {
+    code: code,
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri,
+    grant_type: 'authorization_code'
+  };
+
+  try {
+    const response = await axios.post('https://accounts.zoho.com/oauth/v2/token', new URLSearchParams(data), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    const accessToken = response.data.access_token;
+    res.json({ accessToken });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al intercambiar el código por token', error: error.response.data });
+  }
+});
+
 module.exports = ZohoRoute;
