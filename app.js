@@ -154,11 +154,97 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// Endpoint para recibir y responder a los eventos de webhook - Leads
 app.post('/webhook/leads', async (req, res) => {
     const body = req.body;
     console.log("Body: ", body);
-    //
+
+    // Validar que el campo recibido es `leadgen`
+    if (body.field === 'leadgen' && body.value && body.value.leadgen_id) {
+        const leadgenId = body.value.leadgen_id;
+        const adId = body.value.ad_id;
+        const formId = body.value.form_id;
+        const pageId = body.value.page_id;
+        const adgroupId = body.value.adgroup_id;
+        const accessToken = 'EAAPEpuKfZAOIBO1S1ulgTVstag8S9n1RvvUg5evX6hrufVYfCTAStVaNwWgUfF4QIFu7AIIA20znSHDG4qor1oDeS0jHK9ojfnZApm048ggBrybAzsox58AxIjS6YZCNJaLEk5V3q8XlJF1lr6s6TpFzQYJXOh3ZA2QwnQ51ZBEpFmOirHbE58BQ68bxzHVOefwu86NKvoctDoYp8WwuTNb9q9wZDZD'; // Reemplaza con tu token de acceso
+
+        try {
+            // 1. Obtener los detalles del lead
+            const leadDetails = await axios.get(`https://graph.facebook.com/v17.0/${leadgenId}`, {
+                params: {
+                    access_token: accessToken,
+                    fields: 'field_data,ad_id,form_id,created_time'
+                }
+            });
+            const leadData = leadDetails.data;
+            console.log("Detalles del lead: ", leadData);
+
+            // 2. (Opcional) Obtener más información sobre la página
+            const pageDetails = await axios.get(`https://graph.facebook.com/v17.0/${pageId}`, {
+                params: {
+                    access_token: accessToken,
+                    fields: 'name,category,about'
+                }
+            });
+            console.log("Detalles de la página: ", pageDetails.data);
+
+            // Obtener más información sobre el anuncio
+            const adDetails = await axios.get(`https://graph.facebook.com/v17.0/${adId}`, {
+                params: {
+                    access_token: accessToken,
+                    fields: 'name,status,creative'
+                }
+            });
+            console.log("Detalles del anuncio: ", adDetails.data);
+
+            // Obtener más información sobre el formulario
+            const formDetails = await axios.get(`https://graph.facebook.com/v17.0/${formId}`, {
+                params: {
+                    access_token: accessToken,
+                    fields: 'name,questions'
+                }
+            });
+            console.log("Detalles del formulario: ", formDetails.data);
+
+            // Obtener más información sobre el grupo de anuncios (ad set)
+            const adgroupDetails = await axios.get(`https://graph.facebook.com/v17.0/${adgroupId}`, {
+                params: {
+                    access_token: accessToken,
+                    fields: 'name,status,campaign_id'
+                }
+            });
+            console.log("Detalles del grupo de anuncios: ", adgroupDetails.data);
+
+            // 3. Enviar los datos a Zoho CRM
+            const zohoAccessToken = 'YOUR_ZOHO_ACCESS_TOKEN'; // Reemplaza con tu token de acceso a Zoho CRM
+
+            const zohoResponse = await axios.post(
+                'https://www.zohoapis.com/crm/v2/Leads',
+                {
+                    data: [
+                        {
+                            Last_Name: 'Nombre del lead', // Mapea los datos del lead
+                            Email: 'email@example.com',   // Mapea los datos que necesites
+                            // Agrega más campos de Zoho según sea necesario
+                        }
+                    ]
+                },
+                {
+                    headers: {
+                        Authorization: `Zoho-oauthtoken ${zohoAccessToken}`
+                    }
+                }
+            );
+
+            console.log("Respuesta de Zoho CRM: ", zohoResponse.data);
+            res.status(200).json({ message: 'Lead procesado y enviado a Zoho CRM' });
+
+        } catch (error) {
+            console.error("Error al procesar el lead: ", error);
+            res.status(500).json({ error: error.message });
+        }
+    } else {
+        res.status(400).json({ message: 'Formato de evento no soportado' });
+    }
 });
 
 // Función para crear o actualizar chat
