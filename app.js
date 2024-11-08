@@ -8,6 +8,12 @@ const Chat = require('./src/models/Chat');
 const http = require('http'); // Importar http para crear servidor
 const WebSocket = require('ws');
 const { formatInTimeZone } = require('date-fns-tz');
+//Server-based Applications "Whatsapp_dev"
+const v_client_id = "1000.IPKDV3NR9Y1HJZ3RQA2K0IR97BS2JB";
+const v_client_secret = "ff9572e084d37550aa2c36b1fbb586b641b85e2701";
+const v_refresh_token = "1000.e66d3a8914472f929ce4591acedfab74.65d7a33e2054734c069eea5381f86377";
+// Endpoint de Zoho CRM
+const zohoCRMBaseURL = 'https://www.zohoapis.com/crm/v2';
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -148,6 +154,13 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
+// Endpoint para recibir y responder a los eventos de webhook - Leads
+app.post('/webhook/leads', async (req, res) => {
+    const body = req.body;
+    console.log("Body: ", body);
+    //
+});
+
 // Función para crear o actualizar chat
 async function handleChatMessage(phone, contact) {
     try {
@@ -159,12 +172,22 @@ async function handleChatMessage(phone, contact) {
             chat.unreadMessages = true;
             await chat.save();
         } else {
+            //Buscar en CRM y si no existe crea
+            const zcrm = await zcrmReg(phone, contact);
+            const zcrm_lead_id = zcrm.data.zcrm_lead_id;
+            const zcrm_contact_id = zcrm.data.zcrm_lead_id;
+            const zcrm_lead_owner = zcrm.data.zcrm_lead_owner;
+            const zcrm_contact_owner = zcrm.data.zcrm_contact_owner;
             // Si no existe, crea un nuevo registro
             const newChat = new Chat({
                 phone: phone,
                 contact: contact,
                 lastResponseTime: Date.now(),
-                unreadMessages: true
+                unreadMessages: true,
+                zcrm_lead_id: zcrm_lead_id,
+                zcrm_contact_id: zcrm_contact_id,
+                zcrm_lead_owner: zcrm_lead_owner,
+                zcrm_contact_owner: zcrm_contact_owner
             });
             await newChat.save();
         }
@@ -173,8 +196,139 @@ async function handleChatMessage(phone, contact) {
     }
 }
 
+async function zcrmReg(phone, contact) {
+    try {
+        const access_token = await getAccessToken();
+
+        const headers = {
+            Authorization: `Bearer ${access_token}`
+        };
+
+        //Inicializa variables de respuesta
+        let zcrm_lead_id = null;
+        let zcrm_contact_id = null;
+        let zcrm_lead_owner = null;
+        let zcrm_contact_owner = null;
+
+        //Busca en Leads
+        const leadsResponse = await axios.get(`${zohoCRMBaseURL}/Leads/search?Mobile=${phone}`, { headers });
+        const leadData = leadsResponse.data.data?.[0];
+        if (leadData) {
+            zcrm_lead_id = leadData.id;
+            zcrm_lead_owner = leadData.Owner.id;
+        }
+
+        //Busca en Contactos
+        const contactsResponse = await axios.get(`${zohoCRMBaseURL}/Contacts/search?Mobile=${phone}`, { headers });
+        const contactData = contactsResponse.data.data?.[0];
+        if (contactData) {
+            zcrm_contact_id = contactData.id;
+            zcrm_contact_owner = contactData.Owner.id;
+        }
+
+        //Si no encuentra ni en Leads ni en Contacts, crea un Lead
+        if (!zcrm_lead_id && !zcrm_contact_id) {
+            //Map nuevo Lead
+            const newLeadData = {
+                data: [
+                    {
+                        "Last_Name": contact,
+                        "Mobile": phone,
+                        "Company": "",
+                        "Lead_Source": "Whatsapp - Dev",
+                        "Rubro": "",
+                        "Unidad": "Zoho"
+                    }
+                ]
+            };
+
+            const leadCreationResponse = await axios.post(`${zohoCRMBaseURL}/Leads`, newLeadData, { headers });
+            const createdLead = leadCreationResponse.data?.[0].details;
+
+            if (createdLead) {
+                zcrm_lead_id = createdLead.id;
+                zcrm_lead_owner = createdLead.Created_By.id;
+            }
+        }
+
+        const result = {
+            data: {
+                zcrm_lead_id: zcrm_lead_id || null,
+                zcrm_contact_id: zcrm_contact_id || null,
+                zcrm_lead_owner: zcrm_lead_owner || null,
+                zcrm_contact_owner: zcrm_contact_owner || null
+            }
+        };
+
+        return result;
+    } catch (error) {
+        console.log("Error al crear registro en crm");
+        throw error;
+    }
+}
+
+const getAccessToken = async () => {
+
+    const v_GrantType = "refresh_token";
+    const v_EndPoint = "https://accounts.zoho.com/oauth/v2/token";
+    const v_RedirectUri = "https://www.zoho.com/books";
+
+    const url = v_EndPoint;
+    const fields = {
+        refresh_token: v_refresh_token,
+        client_id: v_client_id,
+        client_secret: v_client_secret,
+        redirect_uri: v_RedirectUri,
+        grant_type: v_GrantType,
+    };
+
+    const fieldsString = Object.keys(fields)
+        .map(
+            (key) => `${encodeURIComponent(key)}=${encodeURIComponent(fields[key])}`
+        )
+        .join("&");
+
+    try {
+        const response = await axios.post(url, fieldsString, {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        });
+
+        return response.data.access_token;
+    } catch (error) {
+        console.error("Error fetching access token:", error);
+        return "error";
+    }
+}
+
 // Endpoint para la verificación del webhook
 app.get('/webhook', (req, res) => {
+    // Verificar el token
+    console.log(req.body);
+
+    // Parsear los parámetros de la solicitud
+    let mode = req.query["hub.mode"];
+    let token = req.query["hub.verify_token"];
+    let challenge = req.query["hub.challenge"];
+
+    console.log(req.query);
+
+    // Verificar que el token y el modo son correctos
+    if (mode && token) {
+        if (mode === "subscribe" && token === VERIFY_TOKEN) {
+            res.status(200).send(challenge);
+        } else {
+            res.sendStatus(403);
+        }
+    } else {
+        // Responder con un error si la verificación falla
+        res.sendStatus(403);
+    }
+});
+
+// Endpoint para la verificación del webhook de Leads
+app.get('/webhook/leads', (req, res) => {
     // Verificar el token
     console.log(req.body);
 

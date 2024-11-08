@@ -7,6 +7,13 @@ const { formatInTimeZone } = require('date-fns-tz');
 const { getWebSocket } = require('../config/websocket');
 const WebSocket = require('ws');
 
+//Server-based Applications "Whatsapp_dev"
+const v_client_id = "1000.IPKDV3NR9Y1HJZ3RQA2K0IR97BS2JB";
+const v_client_secret = "ff9572e084d37550aa2c36b1fbb586b641b85e2701";
+const v_refresh_token = "1000.e66d3a8914472f929ce4591acedfab74.65d7a33e2054734c069eea5381f86377";
+// Endpoint de Zoho CRM
+const zohoCRMBaseURL = 'https://www.zohoapis.com/crm/v2';
+
 MessageRoute.get('/messages', async (req, res) => {
     try {
         const messages = await Message.find().sort({ recipient_phone: 1 });
@@ -221,15 +228,75 @@ async function handleChatMessage(phone) {
         let chat = await Chat.findOne({ phone: phone });
 
         if (!chat) {
+            //Buscar en CRM y si no existe crea
+            const zcrm = await zcrmReg(phone);
+            const zcrm_lead_id = zcrm.data.zcrm_lead_id;
+            const zcrm_contact_id = zcrm.data.zcrm_lead_id;
+            const zcrm_lead_owner = zcrm.data.zcrm_lead_owner;
+            const zcrm_contact_owner = zcrm.data.zcrm_contact_owner;
             // Si no existe, crea un nuevo registro
             const newChat = new Chat({
                 phone: phone,
                 contact: phone,
+                zcrm_lead_id: zcrm_lead_id,
+                zcrm_contact_id: zcrm_contact_id,
+                zcrm_lead_owner: zcrm_lead_owner,
+                zcrm_contact_owner: zcrm_contact_owner
             });
             await newChat.save();
         }
     } catch (error) {
-        console.error("Error al manejar el chat:", error);
+        console.error("Error al crear el chat:", error);
+    }
+}
+
+//Funcion para crear Lead/Contacto en Zoho
+async function zcrmReg(phone) {
+    try {
+        //Obtiene el access_token
+        const access_token = await getAccessToken();
+
+        // Encabezados para la autenticación
+        const headers = {
+            Authorization: `Bearer ${access_token}`
+        };
+
+        // Inicializar variables de respuesta
+        let zcrm_lead_id = null;
+        let zcrm_contact_id = null;
+        let zcrm_lead_owner = null;
+        let zcrm_contact_owner = null;
+
+        // Buscar en Leads
+        const leadsResponse = await axios.get(`${zohoCRMBaseURL}/Leads/search?phone=${mobileNumber}`, { headers });
+        const leadData = leadsResponse.data.data?.[0]; // Obtener el primer resultado si existe
+        if (leadData) {
+            zcrm_lead_id = leadData.id;
+            zcrm_lead_owner = leadData.Owner.id; // El campo 'Owner' puede variar, asegúrate de que esté presente
+        }
+
+        // Buscar en Contactos
+        const contactsResponse = await axios.get(`${zohoCRMBaseURL}/Contacts/search?phone=${mobileNumber}`, { headers });
+        const contactData = contactsResponse.data.data?.[0]; // Obtener el primer resultado si existe
+        if (contactData) {
+            zcrm_contact_id = contactData.id;
+            zcrm_contact_owner = contactData.Owner.id; // El campo 'Owner' puede variar, asegúrate de que esté presente
+        }
+
+        // Construir el objeto con la estructura solicitada
+        const result = {
+            data: {
+                zcrm_lead_id: zcrm_lead_id || null,
+                zcrm_contact_id: zcrm_contact_id || null,
+                zcrm_lead_owner: zcrm_lead_owner || null,
+                zcrm_contact_owner: zcrm_contact_owner || null
+            }
+        };
+
+        return result;
+    } catch (error) {
+        console.log("Error al crear registro en crm");
+        throw error;
     }
 }
 
@@ -294,5 +361,40 @@ MessageRoute.put('/messages/chats/mark-as-read/:phone', (req, res) => {
         .then(() => res.status(200).json({ message: 'Chat marked as read' }))
         .catch((error) => res.status(500).json({ error }));
 });
+
+const getAccessToken = async () => {
+
+    const v_GrantType = "refresh_token";
+    const v_EndPoint = "https://accounts.zoho.com/oauth/v2/token";
+    const v_RedirectUri = "https://www.zoho.com/books";
+
+    const url = v_EndPoint;
+    const fields = {
+        refresh_token: v_refresh_token,
+        client_id: v_client_id,
+        client_secret: v_client_secret,
+        redirect_uri: v_RedirectUri,
+        grant_type: v_GrantType,
+    };
+
+    const fieldsString = Object.keys(fields)
+        .map(
+            (key) => `${encodeURIComponent(key)}=${encodeURIComponent(fields[key])}`
+        )
+        .join("&");
+
+    try {
+        const response = await axios.post(url, fieldsString, {
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+        });
+
+        return response.data.access_token;
+    } catch (error) {
+        console.error("Error fetching access token:", error);
+        return "error";
+    }
+}
 
 module.exports = MessageRoute;
