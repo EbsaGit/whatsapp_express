@@ -243,6 +243,7 @@ app.post('/webhook/leads', async (req, res) => {
             res.status(500).json({ error: error.message });
         }
     } else {
+        console.log("body", body);
         res.status(400).json({ message: 'Formato de evento no soportado' });
     }
 });

@@ -110,6 +110,43 @@ ZohoRoute.post('/get-user-data/:token', async (req, res) => {
   }
 });
 
+ZohoRoute.post("/zoho/send-message/", async (req, res) => {
+  const { access_token, channel_id, template_id, contact_id } = req.body;
+
+  try {
+      if (!access_token || !channel_id || !template_id || !contact_id) {
+          return res.status(400).json({ message: "Faltan parámetros requeridos." });
+      }
+
+      const response = await axios.post(
+          `https://crm.zoho.com/crm/v2.2/settings/messages/channels/${channel_id}/actions/send_template`,
+          {
+              template: { id: template_id },
+              module: { name: "Contacts" },
+              __threads: [
+                  {
+                      _based_on_field: { api_name: "Mobile" },
+                      record: { id: contact_id }
+                  }
+              ]
+          },
+          {
+              headers: {
+                  Authorization: `Zoho-oauthtoken ${access_token}`,
+                  "Content-Type": "application/json"
+              }
+          }
+      );
+
+      res.status(200).json(response.data);
+  } catch (error) {
+      res.status(500).json({
+          message: "Error al enviar mensaje",
+          error: error.response ? error.response.data : error.message
+      });
+  }
+});
+
 const getAccessToken = async () => {
 
   const v_GrantType = "refresh_token";
